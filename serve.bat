@@ -10,7 +10,7 @@ rem ===========================================================================
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-set "PORT=8080"
+set "PORT=8082"
 set "ROOT=."
 if exist "dist\index.html" set "ROOT=dist"
 if not exist "%ROOT%\index.html" (
