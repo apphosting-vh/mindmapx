@@ -27581,13 +27581,28 @@ function Jv({
   h = $(e => e.setRelationshipCurve),
   A = $(e => e.setRelationshipAnchor),
   R = $(e => e.editRelationship),
+  G = $(e => e.deleteRelationship),
+  N = $(e => e.notify),
   {
    screenToFlowPosition: g
   } = _u(),
   [v, y] = (0, _.useState)(null),
   [x, S] = (0, _.useState)(null),
   [anchorDrag, setAnchorDrag] = (0, _.useState)(null),
-  [anchorPreview, setAnchorPreview] = (0, _.useState)(null);
+  [anchorPreview, setAnchorPreview] = (0, _.useState)(null),
+  [sel, setSel] = (0, _.useState)(!1);
+ (0, _.useEffect)(() => {
+  if (!sel) return;
+  let onDown = ev => {
+    if (!ev.target?.closest?.(`[data-id="relationship-${l}"]`) && !ev.target?.closest?.(`.relationship-actions[data-relationship="${l}"]`)) setSel(!1)
+  },
+   onKey = ev => {
+    ev.key === `Escape` && setSel(!1)
+   };
+  return document.addEventListener(`pointerdown`, onDown, !0), document.addEventListener(`keydown`, onKey), () => {
+   document.removeEventListener(`pointerdown`, onDown, !0), document.removeEventListener(`keydown`, onKey)
+  }
+ }, [sel, l]);
  let anchorPoint = (angle, cx, cy, w, h, fx, fy) => {
   if (!Number.isFinite(Number(angle)) || !Number.isFinite(Number(cx)) || !Number.isFinite(Number(cy))) return {
    x: fx,
@@ -27677,7 +27692,10 @@ function Jv({
     baseX: c?.curve?.x ?? 0,
     baseY: c?.curve?.y ?? 0,
     moved: !1
-   }), e.currentTarget.setPointerCapture?.(e.pointerId)
+   });
+   try {
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+   } catch {}
   }, [c?.curve?.x, c?.curve?.y, l, g]),
   E = (0, _.useCallback)(e => {
    if (!x || x.pointerId !== e.pointerId) return;
@@ -27719,7 +27737,10 @@ function Jv({
     pointerId: e.pointerId,
     cx: Number(cx),
     cy: Number(cy)
-   }), e.currentTarget.setPointerCapture?.(e.pointerId)
+   });
+   try {
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+   } catch {}
   },
   anchorMove = e => {
    if (!anchorDrag || anchorDrag.pointerId !== e.pointerId) return;
@@ -27775,8 +27796,8 @@ function Jv({
    d: w.path,
    fill: `none`,
    stroke: d,
-   strokeWidth: f + 4,
-   strokeOpacity: .1,
+   strokeWidth: sel ? f + 8 : f + 4,
+   strokeOpacity: sel ? .3 : .1,
    strokeLinecap: `round`,
    pointerEvents: `none`
   }), (0, b.jsx)(xd, {
@@ -27786,8 +27807,8 @@ function Jv({
    interactionWidth: 18,
    style: {
     stroke: d,
-    strokeWidth: f,
-    strokeOpacity: m,
+    strokeWidth: sel ? f + 2.5 : f,
+    strokeOpacity: sel ? 1 : m,
     strokeLinecap: `round`,
     strokeLinejoin: `round`,
     strokeDasharray: `6 5`
@@ -27799,7 +27820,9 @@ function Jv({
    strokeWidth: 18,
    className: `relationship-hit nodrag nopan`,
    onDoubleClick: edit,
-   onClick: e => e.stopPropagation(),
+   onClick: e => {
+    e.stopPropagation(), setSel(!0)
+   },
    children: (0, b.jsx)(`title`, {
     children: `Double-click to edit this relationship`
    })
@@ -27825,11 +27848,76 @@ function Jv({
     onPointerUp: D,
     onPointerCancel: D,
     onDoubleClick: O,
-    onClick: e => e.stopPropagation(),
+    onClick: e => {
+     e.stopPropagation(), setSel(!0)
+    },
     children: u || (0, b.jsx)(`span`, {
      className: `relationship-label-dot`,
      "aria-hidden": `true`
     })
+   })
+  }) : null, sel && l && !p ? (0, b.jsx)(Cf, {
+   children: (0, b.jsxs)(`div`, {
+    className: `relationship-actions nodrag nopan`,
+    "data-relationship": l,
+    style: {
+     position: `absolute`,
+     transform: `translate(-50%, -50%) translate(${w.labelX}px, ${w.labelY}px) translateY(-42px)`,
+     pointerEvents: `all`,
+     display: `flex`,
+     gap: 5
+    },
+    children: [(0, b.jsx)(`button`, {
+     type: `button`,
+     className: `relationship-action relationship-action--edit nodrag nopan`,
+     title: `Edit relationship`,
+     "aria-label": `Edit relationship`,
+     style: {
+      display: `inline-flex`,
+      alignItems: `center`,
+      justifyContent: `center`,
+      width: 27,
+      height: 27,
+      borderRadius: `50%`,
+      border: `1px solid var(--xm-line, #d0d5dd)`,
+      background: `var(--xm-surface, #fff)`,
+      color: `#344054`,
+      cursor: `pointer`,
+      padding: 0,
+      boxShadow: `0 2px 8px rgba(16, 24, 40, 0.22)`
+     },
+     onClick: ev => {
+      ev.stopPropagation(), R(l)
+     },
+     children: (0, b.jsx)(Th, {
+      size: 13
+     })
+    }), (0, b.jsx)(`button`, {
+     type: `button`,
+     className: `relationship-action relationship-action--delete nodrag nopan`,
+     title: `Delete relationship`,
+     "aria-label": `Delete relationship`,
+     style: {
+      display: `inline-flex`,
+      alignItems: `center`,
+      justifyContent: `center`,
+      width: 27,
+      height: 27,
+      borderRadius: `50%`,
+      border: `1px solid #fecdca`,
+      background: `#fff1f0`,
+      color: `#d92d20`,
+      cursor: `pointer`,
+      padding: 0,
+      boxShadow: `0 2px 8px rgba(16, 24, 40, 0.22)`
+     },
+     onClick: ev => {
+      ev.stopPropagation(), G(l), N && N(`Relationship removed.`, `info`), setSel(!1)
+     },
+     children: (0, b.jsx)(xg, {
+      size: 13
+     })
+    })]
    })
   }) : null]
  })
@@ -29320,6 +29408,7 @@ function Yy(e, t, {
   colors: x
  } = Uy(e, _), S = new Map;
  for (let e of y.values()) e.forEach((e, t) => S.set(e.id, t));
+ 
  let C = h || g.branch?.style || `curved`,
   w = {
    byId: new Map(e.map(e => [e.id, e])),
@@ -29430,7 +29519,7 @@ function Yy(e, t, {
    n = e.level,
    r = Ky(e.edgeDir),
    i = T.get(e.parentId),
-   a = e.edgeStyle || C;
+   a = C;
   P.push({
    id: `edge-${e.parentId}-${e.item.id}`,
    source: e.parentId,
@@ -29504,6 +29593,7 @@ function Yy(e, t, {
     }
    })
   }
+ 
  return {
   nodes: [...Jy({
    records: T,
